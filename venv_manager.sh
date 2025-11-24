@@ -19,9 +19,9 @@ check_whiptail() {
 
 # 扫描当前目录，获取所有虚拟环境列表
 get_venv_list() {
-    local venv_list
-    for dir in ./*; do
-        if [ -d "$dir" ] && [ -f "$dir/bin/activate" ]; then
+    # 列出当前目录下所有包含 bin/activate 的子目录（包括以点开头的隐藏目录）
+    find . -maxdepth 1 -type d ! -path . -print0 | while IFS= read -r -d '' dir; do
+        if [ -f "$dir/bin/activate" ]; then
             echo "${dir#./}"
         fi
     done
@@ -142,37 +142,68 @@ delete_venv_tui() {
 # --- 主程序逻辑 ---
 
 main_menu() {
-    local target_option="[当前目标: $VENV_TARGET]"
-    local CMD
-    
-    # 构造主菜单选项
-    local options=(
-        "0" "选择/更改目标环境 $target_option"
-        "1" "创建/初始化目标环境"
-        "2" "安装依赖包到目标环境"
-        "3" "删除目标环境"
-        "4" "退出管理器"
-    )
+    local VENV_ARRAY=($(get_venv_list))
+    local options=()
+    local idx=1
 
-    # 显示 whiptail 菜单并获取选择
+    # 将发现的 venv 列在菜单顶部（可直接选择切换）
+    for v in "${VENV_ARRAY[@]}"; do
+        local tag="V$idx"
+        local desc="$v"
+        if [ "$v" == "$VENV_TARGET" ]; then
+            desc="$v (当前目标)"
+        fi
+        options+=("$tag" "$desc")
+        idx=$((idx+1))
+    done
+
+    # 添加专用项与操作项（显示在列表下方）
+    options+=("SN" "输入新目标名称")
+    options+=("C"  "创建/初始化 目标环境")
+    options+=("I"  "安装依赖包 到目标环境")
+    options+=("D"  "删除 目标环境")
+    options+=("Q"  "退出管理器")
+
+    local CMD
     CMD=$(whiptail --title "🐍 Python 虚拟环境管理器 TUI" \
-                   --menu "请使用方向键选择操作，按 Enter 键确认。\n\n当前操作目录: $(pwd)" \
-                   20 60 12 \
+                   --menu "请选择虚拟环境（上半部分）或操作（下半部分）。\n\n当前目录: $(pwd)\n当前目标: $VENV_TARGET" \
+                   24 70 16 \
                    "${options[@]}" 3>&1 1>&2 2>&3)
 
-    local status=$? # 捕获 whiptail 的退出状态
-    
-    if [ "$status" -eq 0 ]; then # OK
-        case "$CMD" in
-            0) set_target_venv_tui ;;
-            1) create_venv_tui ;;
-            2) install_packages_tui ;;
-            3) delete_venv_tui ;;
-            4) return 1 ;; # 返回 1 退出主循环
-        esac
+    local status=$?
+    if [ "$status" -ne 0 ]; then
+        return 0
     fi
-    
-    return 0 # 返回 0 继续主循环
+
+    case "$CMD" in
+        V*)
+            # 用户从发现的虚拟环境列表中选择一个（例如 V1）
+            local ID=${CMD#V}
+            local sel_index=$((ID-1))
+            if [ $sel_index -ge 0 ] && [ $sel_index -lt ${#VENV_ARRAY[@]} ]; then
+                VENV_TARGET="${VENV_ARRAY[$sel_index]}"
+                whiptail --title "确认" --msgbox "✅ 目标环境已切换为: $VENV_TARGET" 8 40
+            fi
+            ;;
+        "SN")
+            # 输入新目标名称
+            local new_target=$(whiptail --title "输入新目标" --inputbox "请输入新的目标环境名称：" 8 40 "$VENV_TARGET" 3>&1 1>&2 2>&3)
+            if [ $? -eq 0 ] && [ -n "$new_target" ]; then
+                if [[ "$new_target" =~ [[:space:]] || "$new_target" == "." || "$new_target" == ".." ]]; then
+                    whiptail --title "错误" --msgbox "❌ 目标名称无效。请勿使用空格、单独的点(.)或双点(..)作为名称。" 8 50
+                else
+                    VENV_TARGET="$new_target"
+                    whiptail --title "确认" --msgbox "✅ 目标环境已设置为新名称: $VENV_TARGET" 8 40
+                fi
+            fi
+            ;;
+        "C") create_venv_tui ;;
+        "I") install_packages_tui ;;
+        "D") delete_venv_tui ;;
+        "Q") return 1 ;;
+    esac
+
+    return 0
 }
 
 

@@ -38,14 +38,14 @@ sudo apt install python3-venv
 
 ## 安装与启动
 
-1.  **保存脚本：** 将 `venv_manager_whiptail.sh` 脚本文件保存到您的项目目录中。
+1.  **保存脚本：** 将 `venv_manager.sh` 脚本文件保存到您的项目目录中。
 2.  **添加执行权限：** 赋予脚本可执行权限。
     ```bash
-    chmod +x venv_manager_whiptail.sh
+    chmod +x venv_manager.sh
     ```
 3.  **运行脚本：**
     ```bash
-    ./venv_manager_whiptail.sh
+    ./venv_manager.sh
     ```
 
 ## ⌨️ 操作说明 (TUI 界面)
