@@ -1,85 +1,50 @@
-# 🐍 Python 虚拟环境管理器 (TUI 版)
+# 🐍 Python venv Manager (TUI)
 
-## 简介
+Language / 語言切換 — Default: English  
+[English](#) · [简体中文](README.zh-cn.md) · [繁體中文](README.zh-tw.md)
 
-这是一个基于 Shell 脚本和 `whiptail` 工具开发的虚拟环境（venv）管理器。它提供了一个**文本用户界面 (TUI)**，允许用户通过键盘（方向键、Enter 键）直观地创建、管理和删除项目级的 Python 虚拟环境，解决了在 Linux 系统中手动管理 `venv` 和 `pip install` 时的繁琐和权限问题。
+---
 
-## 运行环境
+Part I — Shortcuts & UI
+- Default language: English (switch via "Language" menu or press L in menu).
+- Shortcuts:
+  - ↑ / ↓ : move selection
+  - Enter : confirm / open
+  - Tab : switch focus (menu ↔ buttons)
+  - Esc / Cancel : back / close dialog
+  - L : open Language menu
+  - Q : Quit (select Quit)
+- UI layout: top = detected venvs (select to switch), bottom = actions (Create / Install / Delete / Language / Quit)
 
-| 环境要求 | 描述 |
-| :--- | :--- |
-| **操作系统** | 任何类 Unix 系统（如 **Ubuntu, Debian, macOS** 等）。脚本在 Bash Shell 下运行。 |
-| **Shell** | **Bash** (v4.0+) |
-| **Python** | **Python 3** (推荐 3.6 及以上版本)。 |
-| **工作目录** | 脚本应在您希望创建或管理虚拟环境的**项目根目录**中运行。 |
+Part II — Quick start
+1. Make script executable:
+   chmod +x venv_manager.sh
+2. Run:
+   ./venv_manager.sh
+3. Requirements:
+   - bash (v4+), whiptail, python3. To create venvs you may need python3-venv:
+     sudo apt install whiptail python3-venv
 
-## 依赖项
+Part III — Features & Notes
+- Detection: scans current directory for folders containing bin/activate (includes hidden .venv).
+- Target: default target is .venv. You can select an existing venv or enter a custom name.
+- Create: runs python3 -m venv [target].
+- Install: input space-separated package names; installs using target venv's pip (or python -m pip).
+- Delete: confirmation required; removes target folder (rm -rf).
+- Localization: UI strings are localized to English, 简体中文, 繁體中文. Language selection applies immediately.
+- Activation: the script does not change your shell. After installing, activate manually:
+  source [target]/bin/activate
 
-您需要确保系统安装了以下两个关键依赖：
+Troubleshooting
+- If whiptail is missing:
+  sudo apt update && sudo apt install whiptail
+- If creating a venv fails, ensure python3-venv is installed.
 
-### 1\. TUI 界面工具：`whiptail`
+Files
+- Script: ./venv_manager.sh
+- This README: ./README.md
+- Optional translations: ./README.zh-cn.md, ./README.zh-tw.md
 
-用于创建交互式的、支持键盘导航的蓝色菜单界面。
-
-```bash
-# 在 Debian/Ubuntu/Mint 系统中安装：
-sudo apt update
-sudo apt install whiptail
-```
-
-### 2\. Python 虚拟环境模块：`python3-venv`
-
-这是 Python 3 用于创建虚拟环境的核心模块。通常默认安装，但如果在执行创建操作时报错，可能需要安装它。
-
-```bash
-# 在 Debian/Ubuntu/Mint 系统中安装：
-sudo apt install python3-venv
-```
-
-## 安装与启动
-
-1.  **保存脚本：** 将 `venv_manager.sh` 脚本文件保存到您的项目目录中。
-2.  **添加执行权限：** 赋予脚本可执行权限。
-    ```bash
-    chmod +x venv_manager.sh
-    ```
-3.  **运行脚本：**
-    ```bash
-    ./venv_manager.sh
-    ```
-
-## ⌨️ 操作说明 (TUI 界面)
-
-启动脚本后，您将进入一个蓝色背景的 TUI 主菜单。
-
-### 导航键
-
-| 按键 | 功能 |
-| :--- | :--- |
-| **↑ / ↓** | 上下移动，选择菜单选项。 |
-| **Enter** | 确认当前选择或按钮（如 OK, Yes）。 |
-| **Tab** | 在菜单选项和底部按钮（如 Cancel, Exit）之间切换焦点。 |
-
-### 主菜单选项说明
-
-| 选项 | 描述 | 操作流程 |
-| :--- | :--- | :--- |
-| **0) 选择/更改目标环境** | 允许您通过序号选择一个已存在的环境，或输入一个新的名称作为当前操作目标。 | 进入子菜单，列出所有已发现环境，供您选择。 |
-| **1) 创建/初始化目标环境** | 在当前目录下，以当前设置的 **目标名称** 创建一个新的 Python 虚拟环境。 | 弹出进度框，执行 `python3 -m venv [目标名称]`。 |
-| **2) 安装依赖包** | 在当前设置的 **目标环境** 中安装指定的 Python 依赖包。 | 弹出输入框，要求您输入要安装的包名（用空格分隔）。 |
-| **3) 删除目标环境** | 永久删除当前设置的 **目标环境** 文件夹及其所有内容（包括已安装的依赖）。 | 弹出确认警告框，执行 `rm -rf [目标名称]`。 |
-| **4) 退出管理器** | 退出 TUI 界面并返回到命令行 Shell。 | 立即退出脚本。 |
-
------
-
-> **💡 激活环境提示：**
->
-> **重要提示：** 脚本执行安装操作后，并不会自动激活环境（Shell 脚本的限制）。要开始使用已安装的包，您必须手动在主 Shell 中执行激活命令：
->
-> ```bash
-> source [您的目标环境名称]/bin/activate
-> ```
->
-> （例如：`source .venv/bin/activate`）
->
-> 退出虚拟环境，只需输入 `deactivate`。
+License / Contribution
+- Edit localization table at top of venv_manager.sh to update texts.
+- Small, focused PRs welcome.
